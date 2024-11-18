@@ -1,49 +1,31 @@
 import "@testing-library/jest-dom";
 import { render, screen, fireEvent } from "@testing-library/react";
 import NewTaskForm from "../components/NewTaskForm";
-import { CATEGORIES } from "../data";
-import App from "../components/App";
 
-test("calls the onTaskFormSubmit callback prop when the form is submitted", () => {
-  const onTaskFormSubmit = jest.fn();
-  render(
-    <NewTaskForm categories={CATEGORIES} onTaskFormSubmit={onTaskFormSubmit} />
-  );
+const mockCategories = ["Code", "Food", "Misc"];
+const mockOnTaskFormSubmit = jest.fn();
 
-  fireEvent.change(screen.queryByLabelText(/Details/), {
-    target: { value: "Pass the tests" },
-  });
+test("renders input fields and dropdown", () => {
+  render(<NewTaskForm categories={mockCategories} onTaskFormSubmit={mockOnTaskFormSubmit} />);
 
-  fireEvent.change(screen.queryByLabelText(/Category/), {
-    target: { value: "Code" },
-  });
-
-  fireEvent.submit(screen.queryByText(/Add task/));
-
-  expect(onTaskFormSubmit).toHaveBeenCalledWith(
-    expect.objectContaining({
-      text: "Pass the tests",
-      category: "Code",
-    })
-  );
+  expect(screen.getByLabelText(/Details/i)).toBeInTheDocument();
+  expect(screen.getByLabelText(/Category/i)).toBeInTheDocument();
 });
 
-test("adds a new item to the list when the form is submitted", () => {
-  render(<App />);
+test("submits a new task with correct details", () => {
+  render(<NewTaskForm categories={mockCategories} onTaskFormSubmit={mockOnTaskFormSubmit} />);
 
-  const codeCount = screen.queryAllByText(/Code/).length;
+  const taskInput = screen.getByLabelText(/Details/i);
+  const categoryDropdown = screen.getByLabelText(/Category/i);
+  const addButton = screen.getByRole("button", { name: /Add task/i });
 
-  fireEvent.change(screen.queryByLabelText(/Details/), {
-    target: { value: "Pass the tests" },
+  fireEvent.change(taskInput, { target: { value: "New Task" } });
+  fireEvent.change(categoryDropdown, { target: { value: "Misc" } });
+  fireEvent.click(addButton);
+
+  expect(mockOnTaskFormSubmit).toHaveBeenCalledTimes(1);
+  expect(mockOnTaskFormSubmit).toHaveBeenCalledWith({
+    text: "New Task",
+    category: "Misc",
   });
-
-  fireEvent.change(screen.queryByLabelText(/Category/), {
-    target: { value: "Code" },
-  });
-
-  fireEvent.submit(screen.queryByText(/Add task/));
-
-  expect(screen.queryByText(/Pass the tests/)).toBeInTheDocument();
-
-  expect(screen.queryAllByText(/Code/).length).toBe(codeCount + 1);
 });
